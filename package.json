@@ -1,0 +1,22 @@
+
+{
+  "name": "taxi-invictus",
+  "version": "1.0.0",
+  "description": "Междугороднее такси — Telegram Mini App",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.9"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "keywords": [],
+  "author": "Taxi Invictus",
+  "license": "ISC"
+}
