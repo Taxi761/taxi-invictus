@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -36,6 +35,7 @@
       cursor: pointer;
       min-width: 100px;
       position: relative;
+      user-select: none;
     }
     .tariff.active {
       border-color: #007bff;
@@ -54,6 +54,7 @@
       border-radius: 10px;
       border: 1px solid #ccc;
       font-size: 14px;
+      box-sizing: border-box;
     }
     #orderBtn {
       margin-top: 10px;
@@ -66,6 +67,7 @@
       font-size: 17px;
       font-weight: bold;
       cursor: pointer;
+      user-select: none;
     }
   </style>
 </head>
@@ -84,10 +86,10 @@
   </div>
 
   <label>Откуда:</label>
-  <input id="fromInput" placeholder="Введите адрес..." />
+  <input id="fromInput" placeholder="Введите адрес..." autocomplete="off"/>
 
   <label>Куда:</label>
-  <input id="toInput" placeholder="Введите адрес..." />
+  <input id="toInput" placeholder="Введите адрес..." autocomplete="off"/>
 
   <label>Дата и время:</label>
   <input type="datetime-local" id="datetime" />
@@ -99,7 +101,7 @@
   </select>
 
   <label>Телефон:</label>
-  <input id="phone" placeholder="+7..." />
+  <input id="phone" placeholder="+7..." autocomplete="off" />
 
   <button id="orderBtn">Заказать</button>
 </div>
@@ -115,31 +117,39 @@ let control = null;
 let selectedTariff = 'econom';
 
 const rates = {
-  econom: 35, comfort: 37, comfort_plus: 40,
-  child: 39, minivan: 55, business: 50
+  econom: 35,
+  comfort: 37,
+  comfort_plus: 40,
+  child: 39,
+  minivan: 55,
+  business: 50
 };
 
+// Обновляет цены в зависимости от километража
 function updateTariffPrices(km) {
   for (let key in rates) {
-    document.getElementById("price-" + key).innerText = `${Math.round(rates[key] * km)} ₽`;
+    document.getElementById("price-" + key).innerText = ${Math.round(rates[key] * km)} ₽;
   }
 }
 
+// Геокодинг адреса через Nominatim OpenStreetMap
 async function geocode(address) {
   const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
   const data = await res.json();
-  return data[0] ? [parseFloat(data[0].lat), parseFloat(data[0].lon)] : null;
+return data[0] ? [parseFloat(data[0].lat), parseFloat(data[0].lon)] : null;
 }
 
+// Обратный геокодинг (координаты в адрес)
 async function reverseGeocode(lat, lon) {
   const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
   const data = await res.json();
   return data.display_name || "";
 }
 
+// Построение маршрута и обновление стоимости
 async function buildRoute() {
-  const from = document.getElementById("fromInput").value;
-  const to = document.getElementById("toInput").value;
+  const from = document.getElementById("fromInput").value.trim();
+  const to = document.getElementById("toInput").value.trim();
   if (!from || !to) return;
 
   const fromCoords = await geocode(from);
@@ -149,7 +159,9 @@ async function buildRoute() {
     return;
   }
 
-  if (control) map.removeControl(control);
+  if (control) {
+    map.removeControl(control);
+  }
 
   control = L.Routing.control({
     waypoints: [L.latLng(...fromCoords), L.latLng(...toCoords)],
@@ -159,23 +171,28 @@ async function buildRoute() {
       return L.marker(wp.latLng, { draggable: true }).on('dragend', async function(e) {
         const latlng = e.target.getLatLng();
         const address = await reverseGeocode(latlng.lat, latlng.lng);
-        if (i === 0) document.getElementById("fromInput").value = address;
-        else document.getElementById("toInput").value = address;
+        if (i === 0) {
+          document.getElementById("fromInput").value = address;
+        } else {
+          document.getElementById("toInput").value = address;
+        }
         buildRoute();
       });
     }
   }).addTo(map);
 
-  control.on('routesfound', function (e) {
+  control.on('routesfound', function(e) {
     const route = e.routes[0];
     const distanceKm = route.summary.totalDistance / 1000;
     updateTariffPrices(distanceKm);
   });
 }
 
+// Обработчики событий для построения маршрута при изменении адресов
 document.getElementById("fromInput").addEventListener("change", buildRoute);
 document.getElementById("toInput").addEventListener("change", buildRoute);
 
+// Выбор тарифа
 document.querySelectorAll('.tariff').forEach(div => {
   div.onclick = () => {
     document.querySelectorAll('.tariff').forEach(el => el.classList.remove('active'));
@@ -184,16 +201,19 @@ document.querySelectorAll('.tariff').forEach(div => {
   };
 });
 
+// Определение текущего местоположения и установка его в "Откуда"
 navigator.geolocation.getCurrentPosition(async pos => {
   const { latitude, longitude } = pos.coords;
   map.setView([latitude, longitude], 14);
   const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
   const data = await res.json();
   document.getElementById("fromInput").value = data.display_name;
+  buildRoute();
 }, () => {
-  console.log("Геолокация не разрешена");
+  console.log("Геолокация не разрешена или не доступна");
 });
-// === ОБРАБОТКА КНОПКИ ЗАКАЗА ===
+
+// Обработка кнопки "Заказать"
 document.getElementById("orderBtn").addEventListener("click", async () => {
   const from = document.getElementById("fromInput").value.trim();
   const to = document.getElementById("toInput").value.trim();
@@ -207,7 +227,11 @@ document.getElementById("orderBtn").addEventListener("click", async () => {
   }
 
   const data = {
-    from, to, datetime, payment, phone,
+    from,
+    to,
+    datetime,
+    payment,
+    phone,
     tariff: selectedTariff
   };
 
@@ -232,5 +256,6 @@ document.getElementById("orderBtn").addEventListener("click", async () => {
   }
 });
 </script>
+
 </body>
 </html>
