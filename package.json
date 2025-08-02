@@ -1,12 +1,12 @@
 {
-  "name": "backend",
+  "name": "taxi-invictus",
   "version": "1.0.0",
-  "description": "npm install express",
+  "description": "Сервер для Telegram Mini App заказа такси",
   "main": "server.js",
   "scripts": {
-    "test": "node server.js",
     "start": "node server.js"
   },
+  "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -15,9 +15,6 @@
     "cors": "^2.8.5",
     "exceljs": "^4.4.0",
     "express": "^5.1.0",
-    "json2csv": "^6.0.0-alpha.2",
-    "node-fetch": "^2.7.0",
-    "node-telegram-bot-api": "^0.66.0",
-    "sqlite3": "^5.1.7"
+    "json2csv": "^6.0.0-alpha.2"
   }
 }

@@ -1,25 +1,25 @@
+require("dotenv").config();
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 const cors = require('cors');
-const fs = require('fs');
 const { Parser } = require('json2csv');
 const ExcelJS = require('exceljs');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // 🔐 Вставь сюда токен своего Telegram-бота и ID чата
-const TELEGRAM_TOKEN = '7652947780:AAH_3Js-48L22HPYLNMVBkFS6WdCARelVTw';       // 👉 пример: '123456789:ABCdEfGhIjKlmNoPQRstuVWXyz'
-const TELEGRAM_CHAT_ID = '-4953236596';        // 👉 пример: '123456789' или '-987654321' для групп
+const TELEGRAM_TOKEN = '8085403378:AAH-MPOKjpeGtHot1Lz651IErCkdGk1F8X4';
+const TELEGRAM_CHAT_ID = '-4953236596';
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use(express.static(__dirname)); // чтобы отдавался index.html
 
-// Временное хранилище заказов (в ОЗУ)
 const orders = [];
 
-// Отправка уведомления в Telegram
 async function sendTelegramMessage(order) {
   const message = `
 📦 Новый заказ:
@@ -44,7 +44,6 @@ async function sendTelegramMessage(order) {
   }
 }
 
-// Обработка POST-запроса на оформление заказа
 app.post('/order', async (req, res) => {
   const order = req.body;
 
@@ -65,7 +64,6 @@ app.post('/order', async (req, res) => {
   res.status(201).json({ success: true });
 });
 
-// Экспорт заказов в CSV
 app.get('/export/csv', (req, res) => {
   const fields = ['phone', 'fromText', 'toText', 'tariff', 'distanceKm', 'price', 'date', 'time', 'payment'];
   const json2csv = new Parser({ fields });
@@ -76,7 +74,6 @@ app.get('/export/csv', (req, res) => {
   res.send(csv);
 });
 
-// Экспорт заказов в Excel
 app.get('/export/excel', async (req, res) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Orders');
@@ -102,7 +99,7 @@ app.get('/export/excel', async (req, res) => {
   res.end();
 });
 
-// Запуск сервера
+// старт сервера
 app.listen(PORT, () => {
   console.log(`🚀 Сервер запущен: http://localhost:${PORT}`);
 });
