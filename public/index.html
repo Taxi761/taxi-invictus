@@ -111,6 +111,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 let control = null;
 let selectedTariff = 'econom';
+let currentDistanceKm = 0;
 
 const rates = {
   econom: 35, comfort: 37, comfort_plus: 40,
@@ -119,7 +120,7 @@ const rates = {
 
 function updateTariffPrices(km) {
   for (let key in rates) {
-    document.getElementById("price-" + key).innerText = Math.round(rates[key] * km) + " ₽";
+    document.getElementById("price-" + key).innerText = Math.round(rates[key] * km) + ' ₽';
   }
 }
 
@@ -132,8 +133,7 @@ async function geocode(address) {
 async function reverseGeocode(lat, lon) {
   const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
   const data = await res.json();
-  return data.
-display_name || "";
+return data.display_name || "";
 }
 
 async function buildRoute() {
@@ -152,7 +152,7 @@ async function buildRoute() {
 
   control = L.Routing.control({
     waypoints: [L.latLng(...fromCoords), L.latLng(...toCoords)],
-    routeWhileDragging: true,
+    routeWhileDragging: false,
     draggableWaypoints: true,
     createMarker: function(i, wp) {
       return L.marker(wp.latLng, { draggable: true }).on('dragend', async function(e) {
@@ -167,8 +167,8 @@ async function buildRoute() {
 
   control.on('routesfound', function (e) {
     const route = e.routes[0];
-    const distanceKm = route.summary.totalDistance / 1000;
-    updateTariffPrices(distanceKm);
+    currentDistanceKm = Math.round(route.summary.totalDistance / 1000);
+    updateTariffPrices(currentDistanceKm);
   });
 }
 
@@ -193,32 +193,18 @@ navigator.geolocation.getCurrentPosition(async pos => {
   console.log("Геолокация не разрешена");
 });
 
+// Отправка формы заказа
 document.getElementById("orderBtn").addEventListener("click", async () => {
-  const phone = document.getElementById("phone").value.trim();
-  const fromText = document.getElementById("fromInput").value.trim();
-  const toText = document.getElementById("toInput").value.trim();
-  const datetime = document.getElementById("datetime").value;
-  const payment = document.getElementById("payment").value;
-
-  if (!phone  !fromText  !toText  !selectedTariff  !payment) {
-    alert("Пожалуйста, заполните все поля.");
-    return;
-  }
-
-  const [date, time] = datetime ? datetime.split("T") : [null, null];
-  const price = document.getElementById("price-" + selectedTariff).innerText.replace(" ₽", "");
-  const distanceKm = price && rates[selectedTariff] ? Math.round(parseInt(price) / rates[selectedTariff]) : null;
-
   const order = {
-    phone,
-    fromText,
-    toText,
+    fromText: document.getElementById("fromInput").value,
+    toText: document.getElementById("toInput").value,
+    date: document.getElementById("datetime").value.split("T")[0],
+    time: document.getElementById("datetime").value.split("T")[1],
+    phone: document.getElementById("phone").value,
+    payment: document.getElementById("payment").value,
     tariff: selectedTariff,
-    payment,
-    date: date || null,
-    time: time || null,
-    distanceKm,
-    price
+    distanceKm: currentDistanceKm,
+    price: Math.round(currentDistanceKm * rates[selectedTariff])
   };
 
   try {
@@ -229,13 +215,13 @@ document.getElementById("orderBtn").addEventListener("click", async () => {
     });
 
     if (res.ok) {
-      alert("Заявка успешно отправлена!");
+      alert("Заказ успешно отправлен!");
     } else {
-      alert("Ошибка при отправке заявки.");
+      alert("Ошибка при оформлении заказа");
     }
   } catch (err) {
-    console.error("Ошибка отправки:", err);
-    alert("Ошибка соединения с сервером.");
+    alert("Ошибка подключения к серверу");
+    console.error(err);
   }
 });
 </script>
