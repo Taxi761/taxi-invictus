@@ -50,14 +50,9 @@ async function sendTelegramMessage(order) {
 app.post('/order', async (req, res) => {
   const order = req.body;
 
-  if (
-    !order ||
-    !order.phone ||
-    !order.fromText ||
-    !order.toText ||
-    !order.tariff ||
-    !order.payment
-  ) {
+  console.log("📥 Новый заказ:", order); // <— сюда добавь
+
+  if (!order  !order.phone  !order.fromText  !order.toText  !order.tariff || !order.payment) {
     return res.status(400).json({ error: 'Некорректные данные' });
   }
 
