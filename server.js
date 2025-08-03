@@ -23,26 +23,30 @@ const orders = [];
 // 📩 Отправка сообщения в Telegram
 async function sendTelegramMessage(order) {
   const message = `
-📦 Новый заказ:
-📞 Телефон: ${order.phone}
-📍 Откуда: ${order.fromText}
-📍 Куда: ${order.toText}
-🚗 Тариф: ${order.tariff}
-📆 Дата: ${order.date || 'Сегодня'}
-⏰ Время: ${order.time || 'Как можно скорее'}
-📏 Расстояние: ${order.distanceKm || '—'} км
-💰 Стоимость: ${order.price || '—'} ₽
-💳 Оплата: ${order.payment}
-  `;
+🚕 <b>Новый заказ</b>
+📍 <b>Откуда:</b> ${order.fromText}
+📍 <b>Куда:</b> ${order.toText}
+📏 <b>Расстояние:</b> ${order.distanceKm || '—'} км
+🕒 <b>Когда:</b> ${order.date || 'Сегодня'}
+💳 <b>Оплата:</b> ${order.payment}
+☎️ <b>Телефон:</b> ${order.phone}
+🚘 <b>Тариф:</b> ${order.tariff}
+💰 <b>Цена:</b> ${order.price || '—'} ₽
+`;
 
   try {
-    await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-      chat_id: TELEGRAM_CHAT_ID,
-      text: message,
-      parse_mode: "HTML"
-    });
+    const response = await axios.post(
+      https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage,
+      {
+        chat_id: TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: "HTML",
+      }
+    );
+
+    console.log("✅ Сообщение отправлено в Telegram");
   } catch (error) {
-    console.error('❌ Ошибка отправки в Telegram:', error.message);
+    console.error("❌ Ошибка отправки в Telegram:", error.message);
   }
 }
 
@@ -50,9 +54,16 @@ async function sendTelegramMessage(order) {
 app.post('/order', async (req, res) => {
   const order = req.body;
 
-  console.log("📥 Новый заказ:", order); // <— сюда добавь
+  console.log("📥 Новый заказ:", order);
 
-  if (!order  !order.phone  !order.fromText  !order.toText  !order.tariff || !order.payment) {
+  if (
+    !order ||
+    !order.phone ||
+    !order.fromText ||
+    !order.toText ||
+    !order.tariff ||
+    !order.payment
+  ) {
     return res.status(400).json({ error: 'Некорректные данные' });
   }
 
