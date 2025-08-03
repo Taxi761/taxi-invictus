@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -108,11 +107,15 @@
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
 
 <script>
+const BOT_TOKEN = "8085403378:AAHMPOKjpeGtHot1Lz651IErCkdGk1F8X4";
+const CHAT_ID = "-4953236596";
+
 const map = L.map('map').setView([55.75, 37.61], 12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
 let control = null;
 let selectedTariff = 'econom';
+let lastDistance = 0; // расстояние в км
 
 const rates = {
   econom: 35, comfort: 37, comfort_plus: 40,
@@ -120,26 +123,36 @@ const rates = {
 };
 
 function updateTariffPrices(km) {
+  lastDistance = km;
   for (let key in rates) {
-    document.getElementById("price-" + key).innerText = `${Math.round(rates[key] * km)} ₽`;
+    const priceElem = document.getElementById("price-" + key);
+    if(priceElem) priceElem.innerText = Math.round(rates[key] * km) + " ₽";
   }
 }
 
 async function geocode(address) {
-  const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-  const data = await res.json();
-  return data[0] ? [parseFloat(data[0].lat), parseFloat(data[0].lon)] : null;
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+    const data = await res.json();
+    return data[0] ? [parseFloat(data[0].lat), parseFloat(data[0].lon)] : null;
+  } catch {
+    return null;
+  }
 }
 
 async function reverseGeocode(lat, lon) {
-  const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
-  const data = await res.json();
-  return data.display_name || "";
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
+    const data = await res.json();
+    return data.display_name || "";
+  } catch {
+    return "";
+  }
 }
 
 async function buildRoute() {
-  const from = document.getElementById("fromInput").value;
-  const to = document.getElementById("toInput").value;
+  const from = document.getElementById("fromInput").value.trim();
+  const to = document.getElementById("toInput").value.trim();
   if (!from || !to) return;
 
   const fromCoords = await geocode(from);
@@ -187,12 +200,70 @@ document.querySelectorAll('.tariff').forEach(div => {
 navigator.geolocation.getCurrentPosition(async pos => {
   const { latitude, longitude } = pos.coords;
   map.setView([latitude, longitude], 14);
-  const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
-  const data = await res.json();
-  document.getElementById("fromInput").value = data.display_name;
+  const address = await reverseGeocode(latitude, longitude);
+  document.getElementById("fromInput").value = address;
 }, () => {
   console.log("Геолокация не разрешена");
 });
+
+document.getElementById("orderBtn").addEventListener("click", async () => {
+  const from = document.getElementById("fromInput").value.trim();
+  const to = document.getElementById("toInput").value.trim();
+  const datetime = document.getElementById("datetime").value;
+  const phone = document.getElementById("phone").value.trim();
+  const payment = document.getElementById("payment").value;
+  const price = Math.round(rates[selectedTariff] * lastDistance);
+
+  if (!from || !to || !datetime || !phone) {
+    alert("Пожалуйста, заполните все поля");
+    return;
+  }
+
+  if (lastDistance === 0) {
+    alert("Сначала постройте маршрут");
+    return;
+  }
+
+  const readableDate = new Date(datetime).toLocaleString("ru-RU", {
+    day: '2-digit', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+
+  const message = `
+🚕 <b>Новый заказ</b>
+📍 <b>Откуда:</b> ${from}
+📍 <b>Куда:</b> ${to}
+📏 <b>Расстояние:</b> ${lastDistance.toFixed(1)} км
+🕒 <b>Когда:</b> ${readableDate}
+💳 <b>Оплата:</b> ${payment === 'cash' ? 'Наличные' : 'Перевод'}
+☎️ <b>Телефон:</b> ${phone}
+🚘 <b>Тариф:</b> ${selectedTariff}
+💰 <b>Цена:</b> ${price} ₽
+`;
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: message,
+        parse_mode: "HTML"
+      })
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error("Ошибка Telegram API: " + text);
+    }
+
+    alert("✅ Заявка успешно отправлена!");
+  } catch (err) {
+    console.error("Ошибка Telegram:", err);
+    alert("❌ Ошибка отправки заявки в Telegram");
+  }
+});
 </script>
+
 </body>
 </html>
