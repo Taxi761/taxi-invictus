@@ -5,21 +5,19 @@ const cors = require('cors');
 const fs = require('fs');
 const { Parser } = require('json2csv');
 const ExcelJS = require('exceljs');
+require('dotenv').config(); // подключение .env
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 🔐 Токен Telegram-бота и ID чата
-const TELEGRAM_TOKEN = '8085403378:AAH-MPOKjpeGtHot1Lz651IErCkdGk1F8X4';
-const TELEGRAM_CHAT_ID = '-4953236596';
-
-// 📂 Папка, где лежит index.html
-app.use(express.static('public'));
+// 🔐 Секреты из .env
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use(express.static('public'));
 
-// Временное хранилище заказов
 const orders = [];
 
 // 📩 Отправка сообщения в Telegram
@@ -47,7 +45,7 @@ async function sendTelegramMessage(order) {
   }
 }
 
-// 📬 Обработка заказов
+// 📬 Приём заказов
 app.post('/order', async (req, res) => {
   const order = req.body;
 
@@ -68,7 +66,7 @@ app.post('/order', async (req, res) => {
   res.status(201).json({ success: true });
 });
 
-// 📤 Экспорт в CSV
+// 📤 Экспорт CSV
 app.get('/export/csv', (req, res) => {
   const fields = ['phone', 'fromText', 'toText', 'tariff', 'distanceKm', 'price', 'date', 'time', 'payment'];
   const json2csv = new Parser({ fields });
@@ -79,7 +77,7 @@ app.get('/export/csv', (req, res) => {
   res.send(csv);
 });
 
-// 📤 Экспорт в Excel
+// 📤 Экспорт Excel
 app.get('/export/excel', async (req, res) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Orders');
@@ -105,7 +103,7 @@ app.get('/export/excel', async (req, res) => {
   res.end();
 });
 
-// 🚀 Запуск сервера
+// 🚀 Запуск
 app.listen(PORT, () => {
   console.log(`🚀 Сервер запущен: http://localhost:${PORT}`);
 });
