@@ -242,15 +242,11 @@ document.getElementById("orderBtn").addEventListener("click", async () => {
 `;
 
   try {
-    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text: message,
-        parse_mode: "HTML"
-      })
-    });
+    const response = await fetch("https://your-backend-url.com/send-order", {
+  method: "POST",
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ message })
+});
 
     if (!response.ok) {
       const text = await response.text();
