@@ -36,7 +36,7 @@ async function sendTelegramMessage(order) {
 
   try {
     const response = await axios.post(
-      https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage,
+  https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage,
       {
         chat_id: TELEGRAM_CHAT_ID,
         text: message,
