@@ -36,13 +36,14 @@ async function sendTelegramMessage(order) {
   `;
 
   try {
-    await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-      chat_id: TELEGRAM_CHAT_ID,
-      text: message,
-    });
-  } catch (error) {
-    console.error('❌ Ошибка отправки в Telegram:', error.message);
-  }
+  await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+    chat_id: TELEGRAM_CHAT_ID,
+    text: message,
+    parse_mode: "HTML" // если ты используешь теги
+  });
+} catch (error) {
+  console.error('❌ Ошибка отправки в Telegram:', error.message);
+}
 }
 
 // 📬 Приём заказов
