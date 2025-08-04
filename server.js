@@ -36,14 +36,13 @@ async function sendTelegramMessage(order) {
 
   try {
     const response = await axios.post(
-  https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage,
+      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
       {
         chat_id: TELEGRAM_CHAT_ID,
         text: message,
-        parse_mode: "HTML",
+        parse_mode: "HTML"
       }
     );
-
     console.log("✅ Сообщение отправлено в Telegram");
   } catch (error) {
     console.error("❌ Ошибка отправки в Telegram:", error.message);
@@ -53,7 +52,6 @@ async function sendTelegramMessage(order) {
 // 📬 Приём заказов
 app.post('/order', async (req, res) => {
   const order = req.body;
-
   console.log("📥 Новый заказ:", order);
 
   if (
