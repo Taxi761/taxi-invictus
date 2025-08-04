@@ -22,6 +22,8 @@ const orders = [];
 
 // 📩 Отправка сообщения в Telegram
 async function sendTelegramMessage(order) {
+console.log("📤 Отправка в Telegram:", TELEGRAM_TOKEN, TELEGRAM_CHAT_ID);
+
   const message = `
 🚕 <b>Новый заказ</b>
 📍 <b>Откуда:</b> ${order.fromText}
