@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -20,56 +21,53 @@
       padding: 20px;
       z-index: 1000;
     }
-    .tariffs {
-      display: flex;
-      overflow-x: auto;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
+    .tariffs { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 10px; }
     .tariff {
-      flex: 1;
-      padding: 12px;
-      border: 2px solid #ccc;
-      border-radius: 10px;
-      text-align: center;
-      cursor: pointer;
-      min-width: 100px;
-      position: relative;
+      flex: 1; padding: 12px; border: 2px solid #ccc;
+      border-radius: 10px; text-align: center; cursor: pointer;
+      min-width: 100px; position: relative;
     }
-    .tariff.active {
-      border-color: #007bff;
-      background: #eef6ff;
-    }
-    .tariff span.price {
-      display: block;
-      margin-top: 6px;
-      font-weight: bold;
-      color: #333;
-    }
+    .tariff.active { border-color: #007bff; background: #eef6ff; }
+    .tariff span.price { display: block; margin-top: 6px; font-weight: bold; color: #333; }
     .panel input, .panel select {
-      width: 100%;
-      padding: 10px;
-      margin-top: 6px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      font-size: 14px;
+      width: 100%; padding: 10px; margin-top: 6px;
+      border-radius: 10px; border: 1px solid #ccc; font-size: 14px;
     }
     #orderBtn {
-      margin-top: 10px;
-      width: 100%;
-      padding: 14px;
-      background-color: #ffcc00;
-      color: black;
-      border: none;
-      border-radius: 12px;
-      font-size: 17px;
-      font-weight: bold;
-      cursor: pointer;
+      margin-top: 10px; width: 100%; padding: 14px;
+      background-color: #ffcc00; color: black;
+      border: none; border-radius: 12px;
+      font-size: 17px; font-weight: bold; cursor: pointer;
+    }
+    .menu-btn {
+      position: absolute; top: 10px; right: 10px;
+      background: #007bff; color: white;
+      border: none; border-radius: 50%; width: 44px; height: 44px;
+      font-size: 24px; z-index: 2000;
+    }
+    .menu {
+      position: absolute; top: 60px; right: 10px;
+      background: white; border: 1px solid #ccc;
+      border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      padding: 10px; display: none; z-index: 2001;
+    }
+    .menu a {
+      display: block; margin: 5px 0;
+      text-decoration: none; color: #007bff;
     }
   </style>
 </head>
 <body>
+
+<button class="menu-btn" onclick="toggleMenu()">☰</button>
+<div class="menu" id="menu">
+  <a href="https://t.me/TAXI_V_SVO?start=Здравствуйте%20возникли%20вопросы%20в%20приложении" target="_blank">Написать в Telegram</a>
+  <a href="tel:+79085002121">Позвонить: +7 908 500-21-21</a>
+  <a href="https://nomera-taxi.ru" target="_blank">Открыть сайт</a>
+</div>
+
 <div id="map"></div>
+
 <div class="panel">
   <div class="tariffs" id="tariffList">
     <div class="tariff active" data-value="econom">Эконом <span class="price" id="price-econom">—</span></div>
@@ -79,31 +77,39 @@
     <div class="tariff" data-value="minivan">Минивэн <span class="price" id="price-minivan">—</span></div>
     <div class="tariff" data-value="business">Бизнес <span class="price" id="price-business">—</span></div>
   </div>
+
   <label>Откуда:</label>
-  <input id="fromInput" placeholder="Введите адрес..." />
+  <input id="fromInput" placeholder="Введите адрес..." autocomplete="off"/>
+
   <label>Куда:</label>
-  <input id="toInput" placeholder="Введите адрес..." />
+  <input id="toInput" placeholder="Введите адрес..." autocomplete="off"/>
+
   <label>Дата и время:</label>
   <input type="datetime-local" id="datetime" />
+
   <label>Оплата:</label>
   <select id="payment">
     <option value="cash">Наличные</option>
     <option value="transfer">Перевод</option>
   </select>
+
   <label>Телефон:</label>
-  <input id="phone" placeholder="+7..." />
+  <input id="phone" placeholder="+7 (___) ___-__-__" maxlength="18"/>
+
   <button id="orderBtn">Заказать</button>
 </div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
 <script>
-// Карта и логика
+function toggleMenu() {
+  const menu = document.getElementById("menu");
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
 const map = L.map('map').setView([55.75, 37.61], 12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-let control = null;
-let selectedTariff = 'econom';
-let lastDistance = 0;
+let control = null, selectedTariff = 'econom', lastDistance = 0;
 
 const rates = {
   econom: 35, comfort: 37, comfort_plus: 40,
@@ -113,137 +119,97 @@ const rates = {
 function updateTariffPrices(km) {
   lastDistance = km;
   for (let key in rates) {
-    const priceElem = document.getElementById("price-" + key);
-    if(priceElem) priceElem.innerText = Math.round(rates[key] * km) + " ₽";
+    const el = document.getElementById("price-" + key);
+    if (el) el.innerText = Math.round(rates[key] * km) + " ₽";
   }
 }
 
-async function geocode(address) {
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-    const data = await res.json();
-    return data[0] ? [parseFloat(data[0].lat), parseFloat(data[0].lon)] : null;
-  } catch {
-    return null;
-  }
+async function geocode(query) {
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+  const data = await res.json();
+  return data[0] ? [parseFloat(data[0].lat), parseFloat(data[0].lon)] : null;
 }
 
 async function reverseGeocode(lat, lon) {
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
-    const data = await res.json();
-    return data.display_name || "";
-  } catch {
-    return "";
-  }
+  const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
+  const data = await res.json();
+  return data.display_name || "";
 }
 
 async function buildRoute() {
   const from = document.getElementById("fromInput").value.trim();
   const to = document.getElementById("toInput").value.trim();
-  if (!from || !to) return;
-
   const fromCoords = await geocode(from);
   const toCoords = await geocode(to);
-  if (!fromCoords || !toCoords) {
-    alert("Адрес не найден");
-    return;
-  }
-
+  if (!fromCoords || !toCoords) return alert("Адрес не найден");
   if (control) map.removeControl(control);
 
   control = L.Routing.control({
     waypoints: [L.latLng(...fromCoords), L.latLng(...toCoords)],
-    routeWhileDragging: true,
-    draggableWaypoints: true,
-    createMarker: function(i, wp) {
-      return L.marker(wp.latLng, { draggable: true }).on('dragend', async function(e) {
-        const latlng = e.target.getLatLng();
-        const address = await reverseGeocode(latlng.lat, latlng.lng);
-        if (i === 0) document.getElementById("fromInput").value = address;
-        else document.getElementById("toInput").value = address;
-        buildRoute();
-      });
-    }
+    createMarker: (i, wp) => L.marker(wp.latLng, { draggable: true }).on("dragend", async e => {
+      const { lat, lng } = e.target.getLatLng();
+      const address = await reverseGeocode(lat, lng);
+      if (i === 0) document.getElementById("fromInput").value = address;
+      else document.getElementById("toInput").value = address;
+      buildRoute();
+    })
   }).addTo(map);
 
-  control.on('routesfound', function (e) {
-    const route = e.routes[0];
-    const distanceKm = route.summary.totalDistance / 1000;
-    updateTariffPrices(distanceKm);
-  });
+  control.on("routesfound", e => updateTariffPrices(e.routes[0].summary.totalDistance / 1000));
 }
-
-document.getElementById("fromInput").addEventListener("change", buildRoute);
-document.getElementById("toInput").addEventListener("change", buildRoute);
-
-document.querySelectorAll('.tariff').forEach(div => {
-  div.onclick = () => {
-    document.querySelectorAll('.tariff').forEach(el => el.classList.remove('active'));
-    div.classList.add('active');
-    selectedTariff = div.dataset.value;
-  };
-});
 
 navigator.geolocation.getCurrentPosition(async pos => {
   const { latitude, longitude } = pos.coords;
   map.setView([latitude, longitude], 14);
   const address = await reverseGeocode(latitude, longitude);
   document.getElementById("fromInput").value = address;
-}, () => {
-  console.log("Геолокация не разрешена");
+}, () => console.log("Геолокация не разрешена"));
+
+document.querySelectorAll('.tariff').forEach(el => el.onclick = () => {
+  document.querySelectorAll('.tariff').forEach(t => t.classList.remove('active'));
+  el.classList.add('active'); selectedTariff = el.dataset.value;
+});
+
+document.getElementById("fromInput").addEventListener("change", buildRoute);
+document.getElementById("toInput").addEventListener("change", buildRoute);
+
+document.getElementById("phone").addEventListener("input", function () {
+  let val = this.value.replace(/\D/g, "");
+  if (val.length > 1) val = "+7 (" + val.substring(1, 4) + ") " + val.substring(4, 7) + "-" + val.substring(7, 9) + "-" + val.substring(9, 11);
+  this.value = val;
 });
 
 document.getElementById("orderBtn").addEventListener("click", async () => {
+  const phone = document.getElementById("phone").value.trim();
   const from = document.getElementById("fromInput").value.trim();
   const to = document.getElementById("toInput").value.trim();
   const datetime = document.getElementById("datetime").value;
-  const phone = document.getElementById("phone").value.trim();
   const payment = document.getElementById("payment").value;
   const price = Math.round(rates[selectedTariff] * lastDistance);
 
-  if (!from || !to || !datetime || !phone) {
-    alert("Пожалуйста, заполните все поля");
-    return;
-  }
-
-  if (lastDistance === 0) {
-    alert("Сначала постройте маршрут");
-    return;
-  }
+  if (!from || !to || !datetime || phone.length < 16) return alert("Заполните все поля корректно");
+  if (lastDistance === 0) return alert("Сначала постройте маршрут");
 
   const readableDate = new Date(datetime).toLocaleString("ru-RU", {
     day: '2-digit', month: 'long', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   });
 
-  const order = {
-    phone,
-    fromText: from,
-    toText: to,
-    date: readableDate,
-    time: "",
-    distanceKm: lastDistance.toFixed(1),
-    price,
-    tariff: selectedTariff,
-    payment
-  };
+  const order = { phone, fromText: from, toText: to, date: readableDate, payment, tariff: selectedTariff, price, distanceKm: lastDistance.toFixed(1) };
 
   try {
-    const res = await fetch("https://taxi-invictus.onrender.com/order", {
+    const res = await fetch("/order", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(order)
     });
-
-    if (res.ok) {
-      alert("✅ Заявка успешно отправлена!");
-    } else {
-      alert("❌ Ошибка отправки заявки");
-    }
-  } catch (err) {
-    console.error("Ошибка:", err);
-    alert("❌ Ошибка связи с сервером");
+    if (!res.ok) throw new Error("Ошибка сервера");
+    alert("✅ Заявка успешно отправлена!");
+    document.getElementById("orderBtn").disabled = true;
+    setTimeout(() => document.getElementById("orderBtn").disabled = false, 5000);
+  } catch (e) {
+    alert("❌ Ошибка отправки заявки");
+    console.error(e);
   }
 });
 </script>
