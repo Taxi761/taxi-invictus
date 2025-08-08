@@ -2,10 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 const cors = require('cors');
-// const fs = require('fs'); // Не используется в текущем коде
-// const { Parser } = require('json2csv'); // Не используется в текущем коде
-// const ExcelJS = require('exceljs'); // Не используется в текущем коде
-require('dotenv').config(); // подключение .env
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,16 +13,15 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 app.use(cors());
 app.use(bodyParser.json());
-// app.use(express.static('public')); // Только если у вас есть папка 'public' с фронтендом
 
-// Для логирования (временно, можно убрать)
 const orders = [];
 
 // 📩 Отправка сообщения в Telegram
 async function sendTelegramMessage(order) {
-  console.log("📤 Отправка в Telegram. Token:", TELEGRAM_TOKEN ? "Загружен" : "Отсутствует", "Chat ID:", TELEGRAM_CHAT_ID);
-
-  // Адаптируем поля к формату, ожидаемому сервером, из данных фронтенда
+  console.log("=== 📤 Отправка в Telegram START ===");
+  console.log("TELEGRAM_TOKEN:", TELEGRAM_TOKEN ? "✅ Загружен" : "❌ Отсутствует");
+  console.log("TELEGRAM_CHAT_ID:", TELEGRAM_CHAT_ID || "❌ Пустой");
+  
   const message = `
 🚕 <b>Новый заказ</b>
 📍 <b>Откуда:</b> ${order.from}
@@ -37,24 +33,24 @@ async function sendTelegramMessage(order) {
 💰 <b>Цена:</b> ${order.price} ₽
 `;
 
-  // ИСПРАВЛЕНО: Убраны лишние пробелы в URL
+  const url = https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage;
+  console.log("📡 Запрос в Telegram API:", url);
+
   try {
-    const response = await axios.post(
-      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, // <-- Исправлено
-      {
-        chat_id: TELEGRAM_CHAT_ID,
-        text: message,
-        parse_mode: "HTML"
-      }
-    );
-    console.log("✅ Сообщение отправлено в Telegram");
+    const response = await axios.post(url, {
+      chat_id: TELEGRAM_CHAT_ID,
+      text: message,
+      parse_mode: "HTML"
+    });
+    console.log("✅ Ответ Telegram API:", response.data);
+    console.log("=== 📤 Отправка в Telegram END ===\n");
     return { success: true };
   } catch (error) {
     console.error("❌ Ошибка отправки в Telegram:", error.message);
-    // Добавим больше деталей для отладки
     if (error.response) {
-      console.error("Детали ошибки Telegram API:", error.response.data);
+      console.error("Ответ Telegram API:", error.response.data);
     }
+    console.log("=== 📤 Отправка в Telegram FAIL ===\n");
     return { success: false, error: error.message };
   }
 }
@@ -62,9 +58,9 @@ async function sendTelegramMessage(order) {
 // 📬 Приём заказов
 app.post('/order', async (req, res) => {
   const order = req.body;
-  console.log("📥 Новый заказ:", JSON.stringify(order, null, 2));
+  console.log("=== 📥 Новый заказ START ===");
+  console.log(order);
 
-  // ИСПРАВЛЕНО: Проверка полей соответствует данным от фронтенда
   if (
     !order ||
     !order.phone ||
@@ -75,44 +71,34 @@ app.post('/order', async (req, res) => {
     !order.datetime ||
     order.price === undefined
   ) {
-    console.error("❌ Некорректные данные:", {
-      hasPhone: !!order?.phone,
-      hasFrom: !!order?.from,
-      hasTo: !!order?.to,
-      hasTariff: !!order?.tariff,
-      hasPayment: !!order?.payment,
-      hasDatetime: !!order?.datetime,
-      hasPrice: order?.price !== undefined
-    });
-    return res.status(400).json({ 
-      error: 'Некорректные данные', 
-      details: 'Отсутствуют обязательные поля: phone, from, to, tariff, payment, datetime, price' 
+    console.error("❌ Некорректные данные");
+    console.log("=== 📥 Новый заказ FAIL ===\n");
+    return res.status(400).json({
+      error: 'Некорректные данные',
+      details: 'Отсутствуют обязательные поля: phone, from, to, tariff, payment, datetime, price'
     });
   }
 
   orders.push(order);
-  
   const telegramResult = await sendTelegramMessage(order);
 
   if (telegramResult.success) {
-    res.status(201).json({ success: true, message: "Заказ принят и уведомление отправлено." });
+    console.log("=== 📥 Новый заказ END ===\n");
+    res.status(201).json({ success: true, message: "Заказ принят и отправлен в Telegram" });
   } else {
-    // Даже если Telegram не сработал, заказ принят
-    res.status(201).json({ 
-      success: true, 
-      message: "Заказ принят, но возникла проблема с уведомлением.", 
-      telegram_error: telegramResult.error 
+    console.log("=== 📥 Новый заказ END с ошибкой ===\n");
+    res.status(201).json({
+      success: true,
+      message: "Заказ принят, но не отправлен в Telegram",
+      telegram_error: telegramResult.error
     });
   }
 });
 
-// ... (остальные маршруты экспорта закомментированы, так как не используются)
-
 // 🚀 Запуск
 app.listen(PORT, () => {
   console.log(`🚀 Сервер запущен: http://localhost:${PORT}`);
-  // Проверка наличия ключей для отладки
   if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) {
-      console.warn("⚠️  Предупреждение: TELEGRAM_TOKEN или TELEGRAM_CHAT_ID не установлены в .env или Render Environment Variables");
+    console.warn("⚠️  TELEGRAM_TOKEN или TELEGRAM_CHAT_ID не установлены!");
   }
 });
