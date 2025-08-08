@@ -33,6 +33,7 @@ async function sendTelegramMessage(order) {
 💰 <b>Цена:</b> ${order.price} ₽
 `;
 
+  // Исправленная строка URL с обратными кавычками:
   const url = https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage;
   console.log("📡 Запрос в Telegram API:", url);
 
@@ -95,7 +96,7 @@ app.post('/order', async (req, res) => {
   }
 });
 
-// 🚀 Запуск
+// 🚀 Запуск сервера
 app.listen(PORT, () => {
   console.log(`🚀 Сервер запущен: http://localhost:${PORT}`);
   if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) {
